@@ -163,7 +163,7 @@ def main():
 		print("Debug line 2 ===>>> mwm")
 
 	else :
-		#propagation_model=prop_model
+		propagation_model=prop_model
 		print("Debug line 3 ===>>> ",propagation_model)
 
 	try:

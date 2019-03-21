@@ -92,7 +92,7 @@ def multi_wall_model_checker(distance,number_of_walls,
                             decay_factor=2.0,
                             l0=40.0,
                             threshold=93,light_decay=6.0,medium_decay=8.0,heavy_decay=10.0):
-    wall_decays=[light_decay,medium_decay,heavy_decay];
+    wall_decays=[light_decay,medium_decay,heavy_decay]
     signal_loss = _one_slope_model_strength(distance, decay_factor, l0)+(wall_decays[0]*number_of_walls[0])+(wall_decays[1]*number_of_walls[1])+(wall_decays[2]*number_of_walls[2])
     #print signal_loss
 
@@ -106,7 +106,7 @@ def single_wall_model_checker(distance,number_of_walls,
                             decay_factor=2.0,
                             l0=40.0,
                             threshold=93,wall_decay=6.0):
-    wall_decays=[wall_decay,wall_decay,wall_decay];
+    wall_decays=[wall_decay,wall_decay,wall_decay]
     signal_loss = _one_slope_model_strength(distance, decay_factor, l0)+(wall_decays[0]*number_of_walls[0])+(wall_decays[1]*number_of_walls[1])+(wall_decays[2]*number_of_walls[2])
     #print signal_loss
 

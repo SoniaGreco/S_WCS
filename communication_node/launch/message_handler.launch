@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+ 
+    <node pkg="communication_node" type="message_handler.py" name="message_handler" output="screen" />
+
+
+</launch>

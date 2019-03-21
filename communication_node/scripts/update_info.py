@@ -53,7 +53,7 @@ def line_of_sight():
 					 connection_list[i][1+j]=0
 					 direct_connection[i][1+j]=0
 			
-			if propagation_model=="los":
+			elif propagation_model=="line_of_sight":
 				print("Using Line Of Sight communication model")
 				distance = get_object_distance(robots_list[i],robots_list[j])
 				if(distance==-1 or distance==None):
@@ -74,7 +74,7 @@ def line_of_sight():
 					connection_list[i][1+j]=0
 					direct_connection[i][1+j]=0
 
-			if propagation_model=="distance":
+			elif propagation_model=="distance":
 				print("Using Distance communication model")
 				distance = get_object_distance(robots_list[i],robots_list[j])
 				if(distance==-1 or distance==None):
@@ -88,7 +88,7 @@ def line_of_sight():
 					 connection_list[i][1+j]=0
 					 direct_connection[i][1+j]=0
 
-			if propagation_model == "multi_wall":
+			elif propagation_model == "multi_wall":
 				print("Using MultiWall communication model")
 				distance_and_walls = get_n_walls_between(robots_list[i],robots_list[j])
 				print(distance_and_walls)
@@ -106,12 +106,12 @@ def line_of_sight():
 					connection_list[i][1+j]=0
 					direct_connection[i][1+j]=0
 
-			if propagation_model == "full_connection":
+			elif propagation_model == "full_connection":
 				print("Using FullConnection communication model")
 				connection_list[i][1+j]=1
 				direct_connection[i][1+j]=1
 			
-			if propagation_model == "single_wall":
+			elif propagation_model == "single_wall":
 				print("Using SingleWall communication model")
 				distance_and_walls = get_n_walls_between(robots_list[i],robots_list[j])
 				if(distance_and_walls==-1 or distance_and_walls==None):
@@ -157,7 +157,7 @@ def main():
 
 	prop_model=rospy.get_param("prop_model",default="multi_wall")
 	print("Debug line 1 ===>>> ",prop_model)
-	model_names=["multi_wall","single_wall", "los","distance","one_slope","full_connection"]
+	model_names=["multi_wall","single_wall", "line_of_sight","distance","one_slope","full_connection"]
 	if not (prop_model in model_names):
 		propagation_model="multi_wall"
 		print("Debug line 2 ===>>> mwm")

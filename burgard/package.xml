@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <name>burgard</name>
+  <version>0.0.0</version>
+  <description>The burgard package</description>
+
+  <maintainer email="hoseingohari76@gmail.com">hosein</maintainer>
+  <license>BSD 3-clause</license>
+  <url type="website">http://www.crlab.ml/</url>
+  <author email="hoseingohari76@gmail.com">hosein</author>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+
+
+  <export>
+  </export>
+</package>

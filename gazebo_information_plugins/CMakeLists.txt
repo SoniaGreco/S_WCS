@@ -73,11 +73,9 @@ catkin_package(
 ###########
 
 
-
 ###### for gazebo 7
 add_library(gazebo_connection_plugin src/GazeboWorldPlugin_v7.cpp)
 target_link_libraries(gazebo_connection_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
-
 
 add_library(gazebo_plugin_contact src/ContactPlugin.cpp)
 target_link_libraries(gazebo_plugin_contact ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})

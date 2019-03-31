@@ -105,8 +105,7 @@ namespace gazebo {
 
             std::string test_object = "unique_sphere";
             vec.clear();
-            vec.push_back(robot_name1);
-            vec.push_back(robot_name2);
+           
             check = 1;
             _world->GetModel(test_object)->SetStatic(true);
 
@@ -115,7 +114,7 @@ namespace gazebo {
             for (int i = 0; i < iterations; i++) {
               _world->GetModel(test_object)->SetStatic(true);
 
-                math::Pose new_test_pose(start_x + i * increment*my_temp, start_y + i * increment * slope, 0.12, 0, 0, 0);
+                math::Pose new_test_pose(start_x + i * increment*my_temp, start_y + i * increment * slope, 0.09, 0, 0, 0);
                 _world->GetModel(test_object)->SetWorldPose(new_test_pose);
               //  this->object_name = "";
                 _world->GetModel(test_object)->SetWorldPose(new_test_pose);
@@ -136,10 +135,25 @@ namespace gazebo {
 
             int hard_num=0,soft_num=0,medium_num=0;
             for (int k=0;k<vec.size();k++){
-              if(vec[k].length()<9){soft_num++;}
-              else if (!Soft_wall.compare(vec[k].substr(0,9))){soft_num++;}
-              else if (!Hard_wall.compare(vec[k].substr(0,9))){hard_num++;}
-              else if (!Medium_wall.compare(vec[k].substr(0,11))){medium_num++;}
+                if(vec.size()==0){
+                    ROS_WARN(" NO VEC");
+                    break;
+
+                }
+                std::stringstream ss(vec[k]);
+                std::string model_name;
+                getline(ss, model_name, ':');
+
+                if(!model_name.compare(robot_name1) || !model_name.compare(robot_name2) || !model_name.compare(std::string("ground_plane"))){
+                   // ROS_INFO("%s === %s ===>>> %s",robot_name1.c_str(),robot_name2.c_str(),vec[k].c_str());
+                    continue;
+                }
+                
+                //ROS_INFO("%s === %s ===>>> %s",robot_name1.c_str(),robot_name2.c_str(),vec[k].c_str());
+              if(model_name.length()<9){soft_num++;}
+              else if (!Soft_wall.compare(model_name.substr(0,9))){soft_num++;}
+              else if (!Hard_wall.compare(model_name.substr(0,9))){hard_num++;}
+              else if (!Medium_wall.compare(model_name.substr(0,11))){medium_num++;}
               else {soft_num++;}
             }
             type_vec.push_back(soft_num);
@@ -219,7 +233,7 @@ namespace gazebo {
             sdf::ElementPtr model = sphereSDF.Root()->GetElement("model");
             model->GetAttribute("name")->SetFromString("unique_sphere");
             _world->InsertModelSDF(sphereSDF);
-            ROS_INFO("Hello World!");
+            ROS_INFO("Hello World! this is starting up");
 
 
             int argc = 0;
@@ -238,33 +252,30 @@ namespace gazebo {
         }
 
         void collision_callback(const std_msgs::String object_name) {
-          std::string concrete="concrete",willowgarage="willowgarage",brick_wall="brick";
-          if(object_name.data.length()<5){return;}
-          else if (!brick_wall.compare(object_name.data.substr(0,5))){
-                    //ROS_INFO("new objects %s",object_name.data.c_str());
-                  }
-          else if (!concrete.compare(object_name.data.substr(0,8))){
-            //ROS_INFO("new objects %s",object_name.data.c_str());
-            }
-          else if (!willowgarage.compare(object_name.data.substr(0,12))){
-            //ROS_INFO("new objects %s",object_name.data.c_str());
-            }
-            else{return;}
-            //object's name = (jersey)(worlds_1)(longwall)(drc_practice)(Dumpster)(room1)
-            this->object_name = object_name.data;
-              //ROS_INFO("new objects %s",object_name.data.c_str());
-              vec.push_back(object_name.data);
-            // if (vec.size() > 0 && check == 1) {
-            //     for (int j = 0; j < vec.size(); j++) {
-            //         if (vec[j] == object_name.data) {
-            //             break;
-            //         } else if (j + 1 == vec.size() && object_name.data != "") {
-            //             vec.push_back(object_name.data);
-            //             ROS_INFO("these are the objects %s  \n", object_name.data.c_str());
-            //         }
-            //     }
-            //
-            // }
+          
+              
+		if(check!=1){return;}
+        try{
+             // vec.push_back(object_name.data);
+             int tempsize=int(vec.size())-1;
+
+            if (tempsize>= 0 && check == 1) {
+               
+		if(vec[tempsize]==object_name.data){
+
+            return;}
+		else{
+
+            vec.push_back(object_name.data);}
+            
+             }
+             else if(check==1){
+
+                vec.push_back(object_name.data);
+                 
+             }
+        }
+        catch(int e){ROS_WARN("ERROR %d",e);}
         }
 
     };
@@ -285,13 +296,18 @@ namespace gazebo {
         // req is the reference to the object of request we have recived from a client
         // res is the reference to the object of response that we have to complete and send back to the client
         std::string command = req.command, robot1 = req.robot1, robot2 = req.robot2;
-
+	
         if (command == "distance") {
+		ROS_INFO("getting distance");
             res.distance = WPT->get_distance(robot1, robot2);
             res.number_of_objects = 0;
         } else if (command == "walls") {
+		//ROS_INFO("getting number of walls");
             res.distance = WPT->get_distance(robot1, robot2);
-            res.objects_type=WPT->get_walls(robot1, robot2);
+	    std::vector<int> mytemp_vec=WPT->get_walls(robot1, robot2);
+            res.objects_type=mytemp_vec;
+		
+	    //ROS_INFO("number of walls between %s and %s =>%d --  %d --- %d",robot1.c_str(),robot2.c_str(),mytemp_vec[0],mytemp_vec[1],mytemp_vec[2]);
 
         }
         else if (command == "temp") {

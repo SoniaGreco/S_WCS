@@ -46,11 +46,8 @@ namespace gazebo {
             contacts = this->parentSensor->Contacts();
             for (unsigned int i = 0; i < contacts.contact_size(); ++i) {
                 std::string collision_name = contacts.contact(i).collision2();
-                std::stringstream ss(collision_name);
-                std::string item;
-                getline(ss, item, ':');
                 std_msgs::String object_name;
-                object_name.data = item;
+                object_name.data = collision_name;
                 collision_publisher.publish(object_name);
             }
         }

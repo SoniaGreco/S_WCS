@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+
+
+
+<arg name="num_robots" default="4"/>
+
+
+
+
+  <group ns="robot0">
+      <param name="namespace" value="robot0" />
+      <param name="number_of_robots" value="$(arg num_robots)" />
+  <node pkg="burgard" type="simple_goal_strategy.py" name="burgard1" output="screen" />
+
+  </group>
+
+
+
+  
+
+
+</launch>

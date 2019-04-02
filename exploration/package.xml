@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>burgard</name>
+  <name>exploration</name>
   <version>0.0.0</version>
-  <description>The burgard package</description>
+  <description>The exploration package</description>
 
   <maintainer email="hoseingohari76@gmail.com">hosein</maintainer>
   <license>BSD 3-clause</license>

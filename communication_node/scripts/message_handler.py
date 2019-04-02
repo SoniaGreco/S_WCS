@@ -101,7 +101,7 @@ def listener():
 	global propagation_models
 	rospy.init_node('communication_node_message_handler')
 	rate=rospy.Rate(50)
-	message_list=[[Data_Goal,"Goal"],[Data_Sample,"sample"]]
+	message_list=[[Data_Goal,"Goal"],[Data_Location,"loc"]]
 	for i in range (0,len(message_list)):
 		message_handlers_list.append(message_handle(data_type=message_list[i][0],tag=message_list[i][1]))
 	rospy.spin()

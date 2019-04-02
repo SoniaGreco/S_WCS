@@ -57,6 +57,7 @@ add_message_files(FILES
   Data_Map.msg
   Data_Odom.msg
   Data_Goal.msg
+  Data_Location.msg
 
 )
 

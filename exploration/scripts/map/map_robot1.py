@@ -61,7 +61,7 @@ def callback(mess):
 				print("Sent occupancy grid! ")
 			rate.sleep()
 
-	elif mess.data.c == "goal":
+	if mess.data.c == "goal":
 		print ("Goal plan received:")
 		print(str(mess.data.a)+", "+str(mess.data.b)) 
 		goal_x = mess.data.a
@@ -81,7 +81,7 @@ def movebase_client():
 	client1.wait_for_server()
 	
 	goal = MoveBaseGoal()
-	goal.target_pose.header.frame_id = "map"
+	goal.target_pose.header.frame_id = "/map"
 	goal.target_pose.header.stamp = rospy.Time.now()
 	goal.target_pose.pose.position.x = active_x
 	goal.target_pose.pose.position.y = active_y

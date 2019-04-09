@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Works with map_robot0.py and map_robot1.py !
+# Works with map_robot1.py and map_robot2.py !
 # ROBOT0 IS THE BASE STATION: IT SENDS GOALS FOR ROBOT1 AND ROBOT2 TO REACH, 
 # AND FINALLY MERGES THE MAPS COLLECTED BY THEM
 #
@@ -46,18 +46,18 @@ def callback(msg):
 
 	global reached_1, reached_2
 	global map1, map2, grid1, grid2
-	if data.command == "reached_1":
+	if msg.command == "reached_1":
 		print("Feedback received: Goal reached by robot1!")
 		reached_1 = 1
-	elif data.command == "reached_2":
+	elif msg.command == "reached_2":
 		print("Feedback received: Goal reached by robot2!")
 		reached_2 = 1
-	elif data.command == "map1":
+	elif msg.command == "map1":
 		print ("map1 info received:")
 		print(msg.data.data[0:10])	
 		grid1 = msg.data
 		map1 = 1
-	elif data.command == "map2":
+	elif msg.command == "map2":
 		print ("map2 info received:")
 		print(msg.data.data[0:10])
 		grid2 = msg.data

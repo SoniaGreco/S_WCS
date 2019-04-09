@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#
+# Works with goal_sender.py !
+#
+
 import rospy
 from  communication_node.messenger_api import *
 from communication_node.msg import *

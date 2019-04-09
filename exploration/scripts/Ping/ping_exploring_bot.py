@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#
+# Works with ping_base_station.py !
+#
+
 import rospy
 from  communication_node.messenger_api import *
 from communication_node.msg import *
@@ -9,15 +13,15 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
 a = None
 name_space = "robot0"
-goal_x = None
-goal_y = None
-active_x = None
-active_y = None
+goal_x = 0
+goal_y = 0
+active_x = 0
+active_y = 0
 j = 0
 check = 0
 connected_positions = []
-ping_id = None
-reached = 0
+ping_id = 0
+reached = 1
 ping_response = 0
 
 
@@ -33,46 +37,46 @@ def send_ping():
 	
 	temp_var=loc_message()
 	
-	temp_var.x= active_x
-	temp_var.y= active_y
+	temp_var.x= 0
+	temp_var.y= 0
 	temp_var.command="ping"
 	temp_var.msg_id = ping_id
-	feed.data = temp_var
-	send_message(feed,Data_Location,"loc")
+	ping.data = temp_var
+	send_message(ping,Data_Location,"loc")
 	print("Sending ping: id " + str(ping_id))
 
 
 
-def send_feedback(result):
+def send_feedback():
 	global active_x, active_y
 	global goal_x, goal_y
 	global j
 	global reached
-	rate = rospy.Rate(5)
-	while not rospy.is_shutdown():		
-		if result:
-			feed = Data_Location()
-			feed.source = "robot0"
-			feed.destination = "robot1"
+
+	feed = Data_Location()
+	feed.source = "robot0"
+	feed.destination = "robot1"
 			
-			temp_var=loc_message()
+	temp_var=loc_message()
 			
-			temp_var.x= active_x
-			temp_var.y= active_y
-			temp_var.command= "goal_reached"
-			feed.data = temp_var
-			send_message(feed,Data_Location,"loc")
-			print("Sending feedback: goal " + str(j) + "reached!")
-			reached = 1
-			j+=1
+	temp_var.x= active_x
+	temp_var.y= active_y
+	temp_var.command= "goal_reached"
+	feed.data = temp_var
+	send_message(feed,Data_Location,"loc")
+	print("Sending feedback: goal " + str(j) + "reached!")
+	reached = 1
+	j+=1
 
-		if active_x!=goal_x or active_y!=goal_y:
-			break
 
-		rate.sleep()
+# alert : so this is the call back funtion for the move base ... when we reach the goal , this function starts and sets the reached to 1
 
-		if active_x!=goal_x or active_y!=goal_y:
-			break
+def move_base_callback(result1,resutl2):
+	global reached
+	reached=1
+
+
+
 
 def movebase_client():
 
@@ -99,7 +103,8 @@ def movebase_client():
 	print("Going to "+ "(" +str(active_x)+", "+ str(active_y)+")")
 	reached = 0
 
-	client.send_goal(goal=goal, done_cb=send_feedback())
+	# alert : when passing a fucntion as a parameter we write the name of the fucntion without parentheses .. exmaple : done_cb=move_base_callback() is wrong .. done_cb=move_base_callback is right
+	client.send_goal(goal=goal, done_cb=move_base_callback)
 	
 				
 	'''
@@ -148,28 +153,36 @@ def main():
 	
 
 	a=receive_message("robot0", Data_Location, "loc",callback)
-	rate = rospy.Rate(0.1)	
+	rate = rospy.Rate(0.2)	
 	while not rospy.is_shutdown():
-		while not rospy.is_shutdown():
-			rate.sleep()
-			if not goal_x == None:
-				break
-	
 		try:
-			#send to goal and check connection
-			if reached or j==0:
-				print("Moving to new goal...")
-				movebase_client()
-			#Sends ping before reaching the goal
-			if not reached:
-				print("Sending ping request..")
-				send_ping()		
 
-			if not ping_id == None and not ping_response and len(connected_positions)>0:
-				goal_x = connected_positions[-1][0]
-				goal_y = connected_positions[-1][1]
+			#alert : we ping 
+			print("Sending ping request..")
+			send_ping()	
+
+			#alert : we put this rate.sleep here so that the while loop runs at desired rate
+			rate.sleep()
+
+			# alert : we check to see if the robot has reached the goal 
+			if not reached :
+				pass
+
+			#alert : if we have a new goal then we go to that goal
+			elif active_x!=goal_x or active_y!=goal_y:
+				print("Moving to new goal...")
+				movebase_client()	
+
+			#alert : if connection is ok , then we send a feedback
+			elif ping_response:
+				print("sending feedback...")
+				send_feedback()	
+			
+			#alert : if connection is  not possible  , then we move to the last good location
+			elif not ping_response and len(connected_positions)>0:
 				print("Gone back to connected position!")
-				
+				goal_x , goal_y = connected_positions.pop()
+				movebase_client()	
 
 		except rospy.ROSInterruptException:
 			rospy.loginfo("Navigation test finished.")

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#
+# Works with ping_exploring_bot.py !
+#
+
 import rospy
 from  communication_node.messenger_api import *
 from communication_node.msg import *
@@ -40,6 +44,7 @@ def send_goal_position():
 	   
 	temp_var = loc_message()
 	# x coordinate
+
 	temp_var.x = goals_list[j][0]
 	# y coordinate
 	temp_var.y = goals_list[j][1]
@@ -59,14 +64,19 @@ def callback(data):
 	global j
 	global goals_list
 	global ping_id
-	pos = []
-
+	pos = [0,0]
 	#If goal is reached
 	cmd_goal = "goal_reached"
 	cmd_ping = "ping"
-
+	print("new message ")
 	if data.data.command == cmd_goal:
 		print("Goal " + str(j) +" reached!")
+		
+		if(j>len(goals_list)):
+			print("all the goals reached ... goodbye")
+			return
+
+		send_goal_position()		
 		reached = 1
 		j +=1
 		pos[0] = data.data.x
@@ -78,6 +88,7 @@ def callback(data):
 	elif data.data.command == cmd_ping:
 		print("Ping request received!")
 		ping_id = data.data.msg_id
+		send_ping_response(ping_id)
 
 
 		
@@ -92,19 +103,8 @@ def main():
 	print("Base Station node started: \n")
 	a = receive_message("robot1", Data_Location, "loc",callback)
 	
-	rate = rospy.Rate(5)
-	while (not rospy.is_shutdown() and j<len(goals_list)):
-		#SENDS NEW GOAL
-		if reached:
-			reached =0
-			print("Sending new goal coordinates...")
-			send_goal_position()
-		#SENDS A PING RESPONSE
-		elif not ping_id == None:
-			print("Sending ping response...")
-			send_ping_response(ping_id)
-
-	rate.sleep()
+	rospy.spin()
+	
 	
 	print("Sending node completed execution!")
 	#END OF PROGRAM
@@ -114,7 +114,6 @@ def main():
 if __name__ == '__main__':
 	rospy.init_node("sending_goal_from_robot1")
 	main()
-	rospy.spin()
 
 
 

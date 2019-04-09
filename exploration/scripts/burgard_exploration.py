@@ -57,9 +57,7 @@ goal_pose=PoseStamped();
 current_goal_status = 0 ; # goal status--- PENDING=0--- ACTIVE=1---PREEMPTED=2--SUCCEEDED=3--ABORTED=4---REJECTED=5--PREEMPTING=6---RECALLING=7---RECALLED=8---LOST=9
 move_base_status_subscriber=None;
 #########################
-test_frontier_visualization_publisher=None;
-test_connection_visualization_publisher=None;
-#########################
+
 
 class MyWrapper:
     def __init__(self,list_index,robot_name_space):
@@ -100,7 +98,7 @@ def frontier_is_new(new_frontier,frontiers_list):
 
 def get_frontiers(map_data):
         global robot_x,robot_y;
-        global test_frontier_visualization_publisher,name_space;
+        global name_space;
         rospy.sleep(1.0);
         frontiers=[];
         while(robot_x==None or robot_y==None):
@@ -109,38 +107,7 @@ def get_frontiers(map_data):
         fsc=FrontierSearch(map_data,5,"balanced");
         test_frontiers=fsc.searchFrom(Point(robot_x,robot_y,0.0));
         frontiers=list(test_frontiers[0]);
-        test_markers=[];
         test_id=0;
-        for i in range(len(test_frontiers[1])):
-            gr=random();
-            red=random();
-            blue=random();
-            for j in test_frontiers[1][i]:
-                test_marker = Marker()
-                test_marker.header.frame_id = "/map"
-                test_marker.header.stamp = rospy.Time.now()
-                test_marker.ns = "basic_shapes"
-                test_marker.id = test_id
-                test_id+=1;
-                test_marker.type = int(name_space[-1])+1;
-                test_marker.action = Marker.ADD
-                test_marker.pose.position.x = j.x
-                test_marker.pose.position.y = j.y
-                test_marker.pose.position.z = 0
-                test_marker.pose.orientation.x = 0.0
-                test_marker.pose.orientation.y = 0.0
-                test_marker.pose.orientation.z = 0.0
-                test_marker.pose.orientation.w = 1.0
-                test_marker.scale.x = 0.1
-                test_marker.scale.y = 0.1
-                test_marker.scale.z = 0.1
-                test_marker.color.r = red;
-                test_marker.color.g = gr;
-                test_marker.color.b = blue;
-                test_marker.color.a = 1.0
-                test_marker.lifetime = rospy.Duration(10.0)
-                test_markers.append(test_marker);
-        test_frontier_visualization_publisher.publish(test_markers);
         return list(frontiers);
         '''
         map_width=int( map_data.info.width); #max of x
@@ -248,11 +215,49 @@ def send_goal(goal_x,goal_y):
         # send goal
     move_client_.cancel_goals_at_and_before_time(rospy.Time.now());
     move_client_goal_.target_pose=goal_pose;
-    rospy.sleep(0.5);
+    rospy.sleep(0.1);
     checking_goals_publisher.publish(Bool(False));
     #move_client_.send_goal_and_wait(goal=move_client_goal_,execute_timeout = rospy.Duration(300),preempt_timeout = rospy.Duration(1));
     move_client_.send_goal(goal=move_client_goal_,done_cb=callback_goal_status);
     print(name_space,"sent goal");
+    goal_pose.header.seq =goal_pose.header.seq+1 ;
+
+
+##################################################
+################################################
+def initial_move():
+    global other_robots_list,goal_publisher;
+    global name_space;
+    global move_client_;
+    global move_client_goal_;
+    global goal_pose;
+    global my_current_goal;
+    global robot_x,robot_y
+  
+
+    x=robot_x
+    y=robot_y
+    if(x<=0):
+        x+=2.5
+    else:
+        x-=2.5
+    
+    if(y<=0):
+        y+=2.5
+    else:
+        y-=2.5
+    
+    goal_pose.pose.position.x = x;
+    goal_pose.pose.position.y = y;
+    goal_pose.pose.orientation.w = 1.0;
+    goal_pose.pose.orientation.z = 0;
+    goal_pose.header.frame_id = "/map";
+    goal_pose.header.stamp = rospy.Time.now();
+        # send goal
+    move_client_.cancel_goals_at_and_before_time(rospy.Time.now());
+    move_client_goal_.target_pose=goal_pose;
+    rospy.sleep(0.1);
+    move_client_.send_goal_and_wait(goal=move_client_goal_,execute_timeout = rospy.Duration(10),preempt_timeout = rospy.Duration(1));
     goal_pose.header.seq =goal_pose.header.seq+1 ;
 ################################################
 ################################################
@@ -301,32 +306,34 @@ def burgard():
     global checking_goals_publisher,checking_goals_flag;
     global current_goal_status,move_client_;
     global goal_publisher,my_current_goal,other_robots_list,my_goals;
-    global test_connection_visualization_publisher;
-    while(merged_map==None):
+    global robot_x
+    while(merged_map==None or robot_x==None):
         pass;
+    
+    initial_move()
+    rospy.sleep(float(random()+0.1)*8)
     while not rospy.is_shutdown():
+        checking_goals_publisher.publish(Bool(True));
+        rate = rospy.Rate(0.5);
+        while(not checking_goals_flag):
+            rate.sleep();
+        rospy.sleep(0.5);
         merged_map_lock.acquire();
         print(name_space,"going for frointiers")
         frontiers=get_frontiers(merged_map);
         merged_map_lock.release();
         if (len(frontiers)==0):
             print(name_space,"no new frontiers");
+            checking_goals_publisher.publish(Bool(False));
             exit();
         #frontiers=compute_frontier_distance(frontiers);
         print(name_space,"we have frontiers",len(frontiers));
         if (len(frontiers)==0):
             print(name_space,"no path to frointiers");
+            checking_goals_publisher.publish(Bool(False));
             exit();
         rate = rospy.Rate(0.5);
-        for k in range(int(name_space[-1]),number_of_robots-1):
-            while goals_list[k]==None:
-                pass;
-
-        checking_goals_publisher.publish(Bool(True));
-        rate = rospy.Rate(0.5);
-        while(not checking_goals_flag):
-            rate.sleep();
-        rospy.sleep(0.5);
+       
         for i in range(0,len(frontiers)):
             goals_list_lock.acquire();
             for j in goals_list:
@@ -358,45 +365,13 @@ def burgard():
         current_goal_status=False;
         my_goals[0]=frontiers[0].travel_point;
         send_goal(frontiers[0].travel_point.x,frontiers[0].travel_point.y);
-        rospy.sleep(3.0);
+        rospy.sleep(2.0);
         time_counter=0;
         test_robots_list=rospy.get_param("/robots_list");
         rate = rospy.Rate(1);
         while current_goal_status==False and time_counter<90:
             rate.sleep();
             time_counter+=2;
-            test_tempx=0;
-            test_tempy=0;
-            test_connection_list=(rospy.get_param("/direct_connection_list_"+name_space));
-            test_connection_markers=[];
-            for i in range (0,int(name_space[-1])):
-                test_tempx=None;
-                test_tempx=other_robots_list[i].robot_x;
-                test_tempy=other_robots_list[i].robot_y;
-                print(name_space,"found",other_robots_list[i].robot_name_space)
-                if(test_tempx==None):continue;
-                test_marker = Marker();
-                test_marker.header.frame_id = "/map";
-                test_marker.header.stamp = rospy.Time.now();
-                test_marker.ns = "points_and_lines";
-                test_marker.id = i;
-                test_marker.type = Marker.LINE_STRIP;
-                test_marker.action = Marker.ADD;
-                test_marker.pose.orientation.x = 0.0;
-                test_marker.pose.orientation.y = 0.0;
-                test_marker.pose.orientation.z = 0.0;
-                test_marker.pose.orientation.w = 1.0;
-                test_marker.scale.x = 0.1;
-                test_temp_robotname=test_robots_list.index(other_robots_list[i].robot_name_space);
-                test_marker.color.r = 1-int(test_connection_list[min(int(test_temp_robotname)+1,4)]);
-                test_marker.color.g = int(test_connection_list[min(int(test_temp_robotname)+1,4)]);
-                test_marker.color.b = 0.5;
-                test_marker.color.a = 1.0;
-                test_marker.points.append(Point(robot_x,robot_y,0.0));
-                test_marker.points.append(Point(test_tempx,test_tempy,0.0));
-                test_marker.lifetime = rospy.Duration(60.0);
-                test_connection_markers.append(test_marker);
-            test_connection_visualization_publisher.publish(test_connection_markers);
             for i in other_robots_list:
                 new_data=Data_Goal();
                 new_data.source=name_space;
@@ -418,7 +393,6 @@ def main():
     global goal_publisher,a_star;
     global map_publisher,odom_subscriber;
     global checking_goals_subscriber,checking_goals_publisher;
-    global test_frontier_visualization_publisher,test_connection_visualization_publisher;
     rospy.init_node("burgard_exploration_node");
     a_star=Algorithmes();
     name_space = rospy.get_param("namespace", default="robot1");
@@ -431,8 +405,6 @@ def main():
         other_robots_list.append(MyWrapper(list_index=temp_i,robot_name_space="robot"+str(i)));
         temp_i+=1;
     move_base_tools();
-    test_connection_visualization_publisher=rospy.Publisher("/"+name_space+"/connection_graph", MarkerArray, queue_size=100)
-    test_frontier_visualization_publisher=rospy.Publisher("/"+name_space+"/frontier_marker", MarkerArray, queue_size=100)
     map_subscriber=rospy.Subscriber("/"+name_space+"/map", OccupancyGrid, map_callback);
     odom_subscriber=rospy.Subscriber("/"+name_space+"/odom", Odometry, odom_callback);
     goal_publisher=rospy.Publisher("/message_server_Goal", Data_Goal,queue_size=15);

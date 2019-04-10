@@ -20,26 +20,19 @@
 </include>
 
 
-
-<!-- 
-
 <include file="$(find setup)/launch/p3at_gmapping.launch">
       <arg name="robotname" value="robot2"/>
 </include>
 <include file="$(find setup)/launch/p3at_move_base.launch">
       <arg name="robotname" value="robot2"/>
 </include>
--->
 
 
-<!-- 
 <include file="$(find setup)/launch/p3at_gmapping.launch">
       <arg name="robotname" value="robot3"/>
 </include>
 <include file="$(find setup)/launch/p3at_move_base.launch">
       <arg name="robotname" value="robot3"/>
 </include>
--->
-
 
 </launch>

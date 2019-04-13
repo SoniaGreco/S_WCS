@@ -28,8 +28,11 @@ robot_is_moving = 0
 connection_list = []
 original_x = None
 original_y = None
+
+#VALUES TO SET
 base_x = 0
 base_y = 0
+##############
 
 data_shared = 0
 
@@ -57,56 +60,74 @@ going_to_base = 0
 robot2_goal_x = None
 robot2_goal_y = None
 
+final = 0
+stop = 0
+
 def update_map(map):
 	global header, info, merged_map, grid
 	header = map.header
 	info = map.info
-	merged_map = np.array(map.data, dtype= np.int8)
 	grid = map
+	if len(merged_map)==0: 
+		merged_map = map.data
+	else:
+		merge_maps(map.data)
+	
+	grid.data = merged_map
 	#print("\nUpdating map.. \n")
 
 def merge_maps(new_map):
-	global merged_map
-	unknown_index = (merged_map==-1)
-
+	global merged_map, grid
 	new_map_np = np.array(new_map, dtype= np.int8) 
+	merged_np = np.array(merged_map, dtype= np.int8) 
 	
-	#Delete -1 values from previous map and replace them with values from new map
-	merged_map[unknown_index] = new_map_np[unknown_index]
+	unknown_index = (merged_np==-1)
 
-	known_index = np.logical_and(merged_map>0, new_map_np>0)
-	merged_map[known_index] = 100
+	#Delete -1 values from previous map and replace them with values from new map
+	merged_np[unknown_index] = new_map_np[unknown_index]
+
+	known_index = np.logical_and(merged_np>10, new_map_np>10)
+	merged_np[known_index] = 100
+
+	merged_map = np.ndarray.tolist(merged_np)
+
+	if not grid == None:
+		grid.data = merged_map
+	
+	
 
 def share_data(robot_i):
-	global merged_map
+	global merged_map, grid
 	global goal_x, goal_y, data_shared
-	print("Robot1 connected to robot"+ str(robot_i)+ "! Sending map and goal position...")
-	
-	if not grid== None:
-		
-		msg = Data_Sample()
-		msg.source = "robot1"
-		msg.destination = "robot"+str(robot_i)
-		
-		temp_var=sample_message()
-		temp_var.a = goal_x
-		temp_var.b = goal_y
-		temp_var.c = "goal"
-		msg.data = temp_var
-		send_message(msg,Data_Sample,"sample")
-		#print("Sent goal position to robot"+ str(robot_i)+ "! ")
+	print("Robot1 connected to ROBOT"+ str(robot_i)+ " - Sending map and goal position...")
+	i=0
+	while i<2:
+		if not grid== None:
+			
+			msg = Data_Sample()
+			msg.source = "robot1"
+			msg.destination = "robot"+str(robot_i)
+			
+			temp_var=sample_message()
+			temp_var.a = goal_x
+			temp_var.b = goal_y
+			temp_var.c = "goal"
+			msg.data = temp_var
+			send_message(msg,Data_Sample,"sample")
+			#print("Sent goal position to robot"+ str(robot_i)+ "! ")
 
-		msg = Data_Map()
-		msg.source = "robot1"
-		msg.destination = "robot"+str(robot_i)
-		msg.command = "map"
-		temp_var=OccupancyGrid()
-		temp_var = grid
-		msg.data = temp_var
-		send_message(msg,Data_Map,"map")
-		#print("Sent occupancy grid to robot"+ str(robot_i)+ "! ")
-		
-		data_shared = 1
+			msg = Data_Map()
+			msg.source = "robot1"
+			msg.destination = "robot"+str(robot_i)
+			msg.command = "map"
+			temp_var=OccupancyGrid()
+			temp_var = grid
+			msg.data = temp_var
+			send_message(msg,Data_Map,"map")
+			#print("Sent occupancy grid to robot"+ str(robot_i)+ "! ")
+			
+			data_shared = 1
+		i+=1
 
 
 def check_connected_robots():
@@ -117,16 +138,18 @@ def check_connected_robots():
 
 	connection_list=(rospy.get_param("/connection_list_robot1"))
 
-	base_connected = 0
+	base = robots_list.index("robot0")   
+	connection=connection_list[1+base]
+	if connection:
+		base_connected =1
+	else: base_connected = 0
 	for i in range (0, len(robots_list)):
 		if not i == 1:
 			robot_i = robots_list.index("robot"+str(i))   
 			connection=connection_list[1+robot_i]
 			if connection:
 				share_data(i)
-				if i ==0:
-					base_connected = 1
-					#print("\nRobot1 connected to base station!")
+				
 				
 	
 	
@@ -148,7 +171,7 @@ def callback_goal(mess):
 	global merged_map, base_connected, going_to_base, robots_goals_list
 	 
 	if mess.data.c == "goal":
-		print ("Received goal position from "+str(mess.source)+"!")
+		#print ("Received goal position from "+str(mess.source)+"!")
 		pos_x = mess.data.a
 		pos_y = mess.data.b
 
@@ -165,7 +188,7 @@ def callback_map(mess):
 	global merged_map, base_connected, going_to_base, robots_goals_list
 
 	if mess.command == "map":
-		print("Received map from "+str(mess.source)+"! \nMerging maps...")
+		#print("Received map from "+str(mess.source)+"! \nMerging maps...")
 		merge_maps(mess.data.data)
 		
 
@@ -173,9 +196,11 @@ def callback_map(mess):
 		check_nearest_robot_to_base(robot2_goal_x, robot2_goal_y)
 
 def move_base_callback(r1,r2):
-	global robot_is_moving
-	#print("Goal reached!")
+	global robot_is_moving, going_to_base, stop
+	print("Goal reached!")
 	robot_is_moving = 0
+	if final:
+		stop = 1
 
 def movebase_client():
 
@@ -183,6 +208,8 @@ def movebase_client():
 	global goal_y
 	global active_x, active_y
 	global robot_is_moving 
+
+	robot_is_moving = 1
 
 	active_x = goal_x
 	active_y = goal_y
@@ -199,28 +226,33 @@ def movebase_client():
 
 	print("Going to "+ "(" +str(active_x)+", "+ str(active_y)+")")
 
-	robot_is_moving = 1
 	client1.send_goal(goal=goal, done_cb=move_base_callback)
 
 def send_done():
-	global active_x, active_y
+	global active_x, active_y, final
 	global goal_x, goal_y, original_x, original_y
 	rate = rospy.Rate(5)
 
-	feed = Data_Map()
-	feed.source = "robot1"
-	feed.destination = "robot0"
-	feed.command = "done"
-	
-	temp_var=OccupancyGrid()
-	
-	feed.data = temp_var
-	send_message(feed,Data_Map,"map")
+	i=0
 	print("Sending final message. Exploration is over, going back to original pose...")
+
+	while i<2:
+		feed = Data_Map()
+		feed.source = "robot1"
+		feed.destination = "robot0"
+		feed.command = "done"
+		
+		temp_var=OccupancyGrid()
+		
+		feed.data = temp_var
+		send_message(feed,Data_Map,"map")
+		
+		i+=1
+
+	final = 1
 	goal_x = original_x
 	goal_y = original_y
 	movebase_client()
-
 	
 def odom_callback(odom_data):
 	global robot_x,robot_y, original_x, original_y
@@ -241,6 +273,21 @@ def compute_frontier_distance(frontiers):
 		frontier_distances.append(distance)
 	return list(frontier_distances)
 
+
+
+def get_frontiers(map_data):
+		global robot_x,robot_y
+		rospy.sleep(1.0)
+		frontiers=[]
+		while(robot_x==None or robot_y==None):
+			rospy.sleep(0.5)
+		print("\nGetting frontiers..")
+		fsc=FrontierSearch(map_data,10,"balanced")
+		test_frontiers=fsc.searchFrom(Point(robot_x,robot_y,0.0))
+		frontiers=list(test_frontiers[0])
+		test_id=0
+		return list(frontiers)
+
 def explore():
 
 	global start, grid, goal_x, goal_y
@@ -248,9 +295,9 @@ def explore():
 
 	frontiers=get_frontiers(grid)
 	if (len(frontiers)==0):
-		print(name_space,"No new frontiers")
+		print("No new frontiers")
 		send_done()
-		exit()
+		return
 
 	print("\nDetected " + str(len(frontiers)) + " frontiers")
 
@@ -288,20 +335,6 @@ def explore():
 		movebase_client()
 		
 
-
-def get_frontiers(map_data):
-		global robot_x,robot_y
-		rospy.sleep(1.0)
-		frontiers=[]
-		while(robot_x==None or robot_y==None):
-			rospy.sleep(0.5)
-		print("\nGetting frontiers..")
-		fsc=FrontierSearch(map_data,5,"balanced")
-		test_frontiers=fsc.searchFrom(Point(robot_x,robot_y,0.0))
-		frontiers=list(test_frontiers[0])
-		test_id=0
-		return list(frontiers)
-
 def initial_move():
 	global goal_x, goal_y
 	global robot_x, robot_y
@@ -315,7 +348,7 @@ def main():
 
 	global a, merged_map
 	global goal_x, base_connected
-	global goal_y, robot_is_moving, data_shared
+	global goal_y, robot_is_moving, data_shared, final, stop
 	global going_to_base, robots_list, robots_goals_list
 
 	print("\nRobot1 is active: exploration started!\n")
@@ -346,7 +379,7 @@ def main():
 			break
 
 	rate = rospy.Rate(10)
-	while not rospy.is_shutdown():
+	while not rospy.is_shutdown() and not stop:
 
 		rate.sleep()
 
@@ -355,27 +388,28 @@ def main():
 			#otherwise continues towards the goal
 			if not data_shared:
 				check_connected_robots()
-			robot_is_moving = 0
 			
 		else:
-			#If robot reached the goal or the base station
-			print("\nRobot1 deciding new task..")
+			if not stop:
+				#If robot reached the goal or the base station
+				print("\nRobot1 deciding new task..")
 
-			#If it needs to go back to the base station, the goal is set to its original pose
-			if going_to_base:
-				goal_x = original_x
-				goal_y = original_y
+				#If it needs to go back to the base station, the goal is set to its original pose
+				if going_to_base:
+					goal_x = original_x
+					goal_y = original_y
 
-				movebase_client()
-				print("Going back to base station!")
-				data_shared = 0
+					print("Going back to base station!")
+					going_to_base=0
+					movebase_client()
+					data_shared = 0
 
-				going_to_base = 0
+					going_to_base = 0
 
-			#If it doesnt need to go back to the base station, it searches for another frontier
-			else:
-				data_shared = 0
-				explore()
+				#If it doesnt need to go back to the base station, it searches for another frontier
+				else:
+					data_shared = 0
+					explore()
 
 				
 

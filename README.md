@@ -36,8 +36,10 @@ RVIZ
 
 #ROLE-BASED BASE STATION NODE
 rosrun exploration rb_base_station.py
+
 #ROLE-BASED ROBOT1 NODE
 rosrun exploration rb_robot1.py
+
 #ROLE-BASED ROBOT2 NODE
 rosrun exploration rb_robot2.py
 

@@ -22,6 +22,8 @@ from frontier_search import *
 merged_map = []
 done = 0
 grid = None
+robots_list = []
+printed = 0
 
 def send_updated_map(grid):
 	msg = Data_Map()
@@ -35,7 +37,7 @@ def send_updated_map(grid):
 	#print("Sent updated map to "+ str(grid.source) + "! ")
 
 def merge_maps(grid):
-	global merged_map
+	global merged_map, grid
 	
 	if len(merged_map)==0:
 		merged_map = np.array(grid.data.data, dtype= np.int8)
@@ -50,32 +52,39 @@ def merge_maps(grid):
 
 		known_index = np.logical_and(merged_map>0, new_map>0)
 		merged_map[known_index] = 100
+		grid.data = merged_map
 
 	
 		
 def callback(grid):
 
-	global merged_map, done
+	global merged_map, done, robots_list, printed 
 	
 	if grid.command == "map":
 		print("Received map update from "+ grid.source + "! Merging...")
 		merge_maps(grid)
 		send_updated_map(grid)
 	elif grid.command == "done":
-		print("All frontiers have been explored! \nCalling all robots back...")
-		done = 1    
+		if done == len(robots_list)-2 and not printed:
+			print("All frontiers have been explored! \nCalling all robots back...")
+			printed = 1
+		else:
+			done = done+1  
 
 def update_map(map):
 	global merged_map, grid
 	if len(merged_map) ==0:
 		merged_map =  np.array(map.data, dtype= np.int8)
 		grid = map
+		grid.data = merged_map
 		print("\nInitializing map.. \n")
 
 def main():
 	global a, done
-	global merged_map, grid
+	global merged_map, grid, robots_list
 	print ("\nBase station is active:")
+
+	robots_list=rospy.get_param("/robots_list")
 
 	a = receive_message("robot0", Data_Map, "map",callback)
 	pub = rospy.Publisher('/robot0/updated_map', OccupancyGrid, queue_size=10)
@@ -96,8 +105,6 @@ def main():
 		pub.publish(grid)
 		rate.sleep()
 
-		if done:
-			break
 
 
 if __name__ == "__main__":

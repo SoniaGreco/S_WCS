@@ -36,16 +36,16 @@ def send_updated_map(grid):
 	send_message(msg,Data_Map,"map")
 	#print("Sent updated map to "+ str(grid.source) + "! ")
 
-def merge_maps(grid):
+def merge_maps(new_grid):
 	global merged_map, grid
 	
 	if len(merged_map)==0:
-		merged_map = np.array(grid.data.data, dtype= np.int8)
+		merged_map = np.array(new_grid.data.data, dtype= np.int8)
 	else:
 
 		unknown_index = (merged_map==-1)
 
-		new_map = np.array(grid.data.data, dtype= np.int8) 
+		new_map = np.array(new_grid.data.data, dtype= np.int8) 
 		
 		#Delete -1 values from previous map and replace them with values from new map
 		merged_map[unknown_index] = new_map[unknown_index]

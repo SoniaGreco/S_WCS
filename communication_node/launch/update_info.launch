@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <param name="prop_model" value="multi_wall"/> <!--  
+    <param name="prop_model" value="full_connection"/> <!--  
      value= "multi_wall","single_wall", "line_of_sight", "distance","one_slope","full_connection"    -->
 
     <param name="decay_factor" value="2.2"/>

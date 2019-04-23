@@ -45,13 +45,13 @@ header = None
 info= None
 data = None
 
-base_connected = 1
+base_connected = 0
 
 goal_x = None
 goal_y = None
 active_x = None
 active_y = None
-data_shared = 0
+
 merged_map = []
 map_received = 0
 going_to_base = 0
@@ -98,7 +98,7 @@ def merge_maps(new_map):
 
 def share_data(robot_i):
 	global merged_map, grid
-	global goal_x, goal_y, data_shared
+	global goal_x, goal_y
 	print("Robot2 connected to ROBOT" + str(robot_i)+ " - Sending map and goal position...")
 	
 	i=0
@@ -127,7 +127,6 @@ def share_data(robot_i):
 			send_message(msg,Data_Map,"map")
 			#print("Sending occupancy grid to robot"+ str(robot_i)+ "... ")
 			
-			data_shared = 1
 		i+=1
 
 def check_connected_robots():
@@ -199,6 +198,8 @@ def move_base_callback(r1,r2):
 	robot_is_moving = 0
 	if final:
 		stop = 1
+	if going_to_base:
+		going_to_base= 0
 	
 
 def movebase_client():
@@ -325,9 +326,19 @@ def explore():
 		
 		nearest = distances.index(min(distances))
 
-		goal_x = frontiers[nearest].travel_point.x
-		goal_y = frontiers[nearest].travel_point.y
+		if not frontiers[nearest].travel_point.x == goal_x or not frontiers[nearest].travel_point.y == goal_y:
+			goal_x = frontiers[nearest].travel_point.x
+			goal_y = frontiers[nearest].travel_point.y
 
+		elif len(frontiers)>1:
+			second = distances.index(max(distances))
+			goal_x = frontiers[second].travel_point.x
+			goal_y = frontiers[second].travel_point.y
+		else:
+			if (len(frontiers)==0):
+				print("No new frontiers")
+				send_done()
+				return
 		#RESET ROBOTS_GOALS_LIST
 		robots_goals_list = []
 
@@ -350,7 +361,7 @@ def main():
 	global a, merged_map
 	global goal_x, final, stop
 	global goal_y, robot_is_moving
-	global going_to_base, robots_list, robots_goals_list, data_shared
+	global going_to_base, robots_list, robots_goals_list
 
 	print("\nRobot2 is active: exploration started!\n")
 	
@@ -386,8 +397,11 @@ def main():
 		if robot_is_moving:
 			#Checks if there are connected robots and sends them map and goal position
 			#otherwise continues towards the goal
-			if not data_shared:
-				check_connected_robots()
+			check_connected_robots()
+			 
+			if base_connected and going_to_base:
+				going_to_base=0
+				explore()
 			
 		else:
 
@@ -401,14 +415,10 @@ def main():
 					goal_y = original_y
 
 					print("Going back to base station!")
-					going_to_base = 0
 					movebase_client()
-
-					data_shared = 0
 
 				#If it doesnt need to go back to the base station, it searches for another frontier
 				else:
-					data_shared = 0
 					explore()
 
 				

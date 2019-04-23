@@ -26,4 +26,4 @@ obstacles_costmap2d2:
 
 inflation:
   inflation_radius: 1.75
-  cost_scaling_factor: 2.58
+  cost_scaling_factor: 5

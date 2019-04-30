@@ -34,25 +34,34 @@ def send_updated_map(grid):
 	temp_var.data = grid.data.data
 	msg.data = temp_var
 	send_message(msg,Data_Map,"map")
-	#print("Sent updated map to "+ str(grid.source) + "! ")
+	print("Sent updated map to "+ str(grid.source) + "! ")
 
 def merge_maps(new_grid):
 	global merged_map, grid
 	
 	if len(merged_map)==0:
-		merged_map = np.array(new_grid.data.data, dtype= np.int8)
+		merged_map = new_grid.data.data
 	else:
 
-		unknown_index = (merged_map==-1)
+		merged_np = np.array(merged_map, dtype= np.int8) 
 
-		new_map = np.array(new_grid.data.data, dtype= np.int8) 
+		unknown_index = (merged_np==-1)
+
+		new_map_np = np.array(new_grid.data.data, dtype= np.int8) 
 		
 		#Delete -1 values from previous map and replace them with values from new map
-		merged_map[unknown_index] = new_map[unknown_index]
+		merged_np[unknown_index] = new_map_np[unknown_index]
 
-		known_index = np.logical_and(merged_map>0, new_map>0)
-		merged_map[known_index] = 100
+		zero_indexes = (new_map_np == 0)
+		merged_np[zero_indexes] = 0
+
+		known_index = (new_map_np>0)
+		merged_np[known_index] = 100
+		merged_map = np.ndarray.tolist(merged_np)
+
+	if not grid == None:
 		grid.data = merged_map
+	
 
 	
 		
@@ -71,11 +80,11 @@ def callback(grid):
 		else:
 			done = done+1  
 
-def update_map(map):
+def update_map(u_map):
 	global merged_map, grid
 	if len(merged_map) ==0:
-		merged_map =  np.array(map.data, dtype= np.int8)
-		grid = map
+		merged_map =  u_map.data
+		grid = u_map
 		grid.data = merged_map
 		print("\nInitializing map.. \n")
 
@@ -84,11 +93,14 @@ def main():
 	global merged_map, grid, robots_list
 	print ("\nBase station is active:")
 
+
 	robots_list=rospy.get_param("/robots_list")
 
 	a = receive_message("robot0", Data_Map, "map",callback)
 	pub = rospy.Publisher('/robot0/updated_map', OccupancyGrid, queue_size=10)
 	rospy.Subscriber("/robot0/map", OccupancyGrid, update_map)
+
+	starting_time = rospy.get_time()
 
 
 	rate = rospy.Rate(1)
@@ -100,9 +112,22 @@ def main():
 			break
 
 	while (not rospy.is_shutdown()):
-		merged=list(merged_map)
+		""" merged=list(merged_map)
 		grid.data = merged
+		 """
 		pub.publish(grid)
+
+		time = rospy.get_time()
+		delta = time - starting_time
+		map_np = np.array(merged_map, dtype= np.int8) 
+		known = (map_np != -1)
+		known_elements = np.count_nonzero(known)
+		
+		percentage = (float(known_elements)/len(map_np)) * 100
+
+		if abs(delta % 60) <1:
+			print("Timestamp "+str(delta)+" seconds: '%Area covered = "+ str(percentage))
+
 		rate.sleep()
 
 

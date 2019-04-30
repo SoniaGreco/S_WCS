@@ -4,10 +4,10 @@ global_costmap:
   resolution: 0.2
   rolling_window:             false
   track_unknown_space:        true
-  width:                      240.0  #150
-  height:                     240.0  #150
-  origin_x:                   20.0   #-75
-  origin_y:                   20.0   #-75
+  width:                      140.0  #150
+  height:                     60.0  #150
+  origin_x:                   0.0   #-75
+  origin_y:                   0.0   #-75
   static:                     true
 
   plugins:

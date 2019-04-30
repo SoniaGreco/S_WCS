@@ -53,7 +53,7 @@ active_x = None
 active_y = None
 
 merged_map = []
-map_received = 0
+base_map = []
 going_to_base = 0
 
 robot2_goal_x = None
@@ -61,6 +61,12 @@ robot2_goal_y = None
 
 final = 0
 stop = 0
+
+covered_distance = 0
+
+starting_time = None
+
+new_data = 0
 
 def update_map(map):
 	global header, info, merged_map, grid
@@ -84,8 +90,11 @@ def merge_maps(new_map):
 
 	#Delete -1 values from previous map and replace them with values from new map
 	merged_np[unknown_index] = new_map_np[unknown_index]
+	
+	zero_indexes = (new_map_np == 0)
+	merged_np[zero_indexes] = 0
 
-	known_index = np.logical_and(merged_np>10, new_map_np>10)
+	known_index = np.logical_and(merged_np>0, new_map_np>0)
 	merged_np[known_index] = 100
 
 	merged_map = np.ndarray.tolist(merged_np)
@@ -130,7 +139,7 @@ def share_data(robot_i):
 
 def check_connected_robots():
 	global connection_list
-	global base_connected, robots_list
+	global base_connected, robots_list, base_map, going_to_base
 
 	connection_list=[]
 
@@ -140,7 +149,26 @@ def check_connected_robots():
 	connection=connection_list[1+base]
 	if connection:
 		base_connected =1
-	else: base_connected = 0
+		base_map = merged_map
+	else: 
+		base_connected = 0
+		base_map_np = np.array(base_map, dtype = np.int8)
+		merged_map_np = np.array(merged_map, dtype = np.int8)
+		#number of known elements at the base
+		known_ind = (base_map_np != -1)
+		known_elements = len(known_ind)
+
+		diff = merged_map_np-base_map_np
+		not_zero = (diff !=0)
+		#number of new elements
+		new_elements = len(not_zero)
+
+		#
+		# IF ROBOT COLLECTED A LOT OF DATA WITHOUT SHARING IT, IT GOES BACK TO THE BASE STATION
+		#
+		if known_elements / (known_elements + new_elements) < 0.8:
+			going_to_base = 1
+
 	for i in range (0, len(robots_list)):
 		if not i == 1:
 			robot_i = robots_list.index("robot"+str(i))   
@@ -255,15 +283,31 @@ def send_done():
 	movebase_client()
 	
 def odom_callback(odom_data):
-	global robot_x,robot_y, original_x, original_y
+	global robot_x,robot_y, original_x, original_y, covered_distance
 	if original_x == None:
 		original_x = odom_data.pose.pose.position.x
 		original_y = odom_data.pose.pose.position.y
 		#print"Got original pose!\n"
 
+	else: 
 
-	robot_x=odom_data.pose.pose.position.x
+		current_x=odom_data.pose.pose.position.x
+		current_y=odom_data.pose.pose.position.y
+		#Uses previously stored position in robot_x, robot_y
+		covered_distance += math.sqrt(pow((current_x - robot_x),2) + pow((current_y - robot_y), 2))
+	
+	#Set new current position
+	robot_x= odom_data.pose.pose.position.x
 	robot_y=odom_data.pose.pose.position.y
+
+	if not starting_time == None:
+		time = rospy.get_time()
+		delta = time - starting_time
+		if abs(delta % 60) <1:
+			print("Timestamp "+str(delta)+" seconds: travelled distance = " + str(covered_distance))
+
+
+
 	
 def compute_frontier_distance(frontiers):
 	global robot_x,robot_y
@@ -352,25 +396,27 @@ def initial_move():
 	goal_x = robot_x+1
 	goal_y = robot_y-1
 
-	
+		
 
 def main():
 
 	global a, merged_map
 	global goal_x, base_connected
 	global goal_y, robot_is_moving, final, stop
-	global going_to_base, robots_list, robots_goals_list
+	global going_to_base, robots_list, robots_goals_list, starting_time
 
 	print("\nRobot1 is active: exploration started!\n")
 	
 	robots_list=rospy.get_param("/robots_list")
-
 
 	a=receive_message("robot1", Data_Map, "map", callback_map)
 	b=receive_message("robot1", Data_Sample, "sample", callback_goal)
 
 	rospy.Subscriber("/robot1/map", OccupancyGrid, update_map)
 	rospy.Subscriber("/robot1/odom", Odometry, odom_callback)
+	#rospy.Subscriber("/robot1/move_base/NavfnROS/plan", Path, path_callback)
+
+	starting_time = rospy.get_time()
 
 	rate = rospy.Rate(5)
 	while not rospy.is_shutdown():

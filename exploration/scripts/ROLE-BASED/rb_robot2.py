@@ -68,15 +68,16 @@ starting_time = None
 
 new_data = 0
 
-def update_map(map):
+def update_map(n_map):
 	global header, info, merged_map, grid
-	header = map.header
-	info = map.info
-	grid = map
+	header = n_map.header
+	info = n_map.info
+	grid = n_map
 	if len(merged_map)==0: 
-		merged_map = map.data
+		merged_map = n_map.data
 	else:
-		merge_maps(map.data)
+		#print("nes map "+ str(len(n_map)))
+		merge_maps(n_map.data)
 	
 	grid.data = merged_map
 	#print("\nUpdating map.. \n")
@@ -93,8 +94,8 @@ def merge_maps(new_map):
 
 	zero_indexes = (new_map_np == 0)
 	merged_np[zero_indexes] = 0
-
-	known_index = np.logical_and(merged_np>0, new_map_np>0)
+	
+	known_index = (new_map_np>0)
 	merged_np[known_index] = 100
 
 	merged_map = np.ndarray.tolist(merged_np)
@@ -156,12 +157,12 @@ def check_connected_robots():
 		merged_map_np = np.array(merged_map, dtype = np.int8)
 		#number of known elements at the base
 		known_ind = (base_map_np != -1)
-		known_elements = len(known_ind)
+		known_elements = np.count_nonzero(known_ind)
 
 		diff = merged_map_np-base_map_np
 		not_zero = (diff !=0)
 		#number of new elements
-		new_elements = len(not_zero)
+		new_elements = np.count_nonzero(not_zero)
 
 		#
 		# IF ROBOT COLLECTED A LOT OF DATA WITHOUT SHARING IT, IT GOES BACK TO THE BASE STATION
@@ -170,7 +171,7 @@ def check_connected_robots():
 			going_to_base = 1
 
 	for i in range (0, len(robots_list)):
-		if not i == 1:
+		if not i == 2:
 			robot_i = robots_list.index("robot"+str(i))   
 			connection=connection_list[1+robot_i]
 			if connection:
@@ -218,8 +219,8 @@ def callback_map(mess):
 		merge_maps(mess.data.data)
 		
 
-	if not base_connected and not ord(mess.source[5])==0 and not robot2_goal_x==None:
-		check_nearest_robot_to_base(robot2_goal_x, robot2_goal_y)
+	if not base_connected and not ord(mess.source[5])==0 and not robot1_goal_x==None:
+		check_nearest_robot_to_base(robot1_goal_x, robot1_goal_y)
 
 
 def move_base_callback(r1,r2):
@@ -303,8 +304,8 @@ def odom_callback(odom_data):
 
 	if not starting_time == None:
 		time = rospy.get_time()
-		delta = time - starting_time
-		if abs(delta % 60) <1:
+		delta = float(time) - float(starting_time)
+		if abs(float(delta) % 20) <1:
 			print("Timestamp "+str(delta)+" seconds: travelled distance = " + str(covered_distance))
 
 
@@ -416,7 +417,7 @@ def main():
 
 	rospy.Subscriber("/robot2/map", OccupancyGrid, update_map)
 	rospy.Subscriber("/robot2/odom", Odometry, odom_callback)
-	#rospy.Subscriber("/robot2/move_base/NavfnROS/plan", Path, path_callback)
+	pub = rospy.Publisher('/robot2/updated_map', OccupancyGrid, queue_size=10)
 
 	starting_time = rospy.get_time()
 
@@ -440,6 +441,7 @@ def main():
 	while not rospy.is_shutdown() and not stop:
 
 		rate.sleep()
+		pub.publish(grid)
 
 		if robot_is_moving:
 			#Checks if there are connected robots and sends them map and goal position

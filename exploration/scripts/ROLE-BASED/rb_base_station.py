@@ -25,16 +25,16 @@ grid = None
 robots_list = []
 printed = 0
 
-def send_updated_map(grid):
+def send_updated_map(new_grid):
 	msg = Data_Map()
 	msg.source = "robot0"
-	msg.destination = grid.source
+	msg.destination = new_grid.source
 	msg.command = "map"
 	temp_var=OccupancyGrid()
-	temp_var.data = grid.data.data
+	temp_var.data = merged_map
 	msg.data = temp_var
 	send_message(msg,Data_Map,"map")
-	print("Sent updated map to "+ str(grid.source) + "! ")
+	#print("Sent updated map to "+ str(new_grid.source) + "! ")
 
 def merge_maps(new_grid):
 	global merged_map, grid
@@ -65,17 +65,18 @@ def merge_maps(new_grid):
 
 	
 		
-def callback(grid):
+def callback(new_grid):
 
 	global merged_map, done, robots_list, printed 
 	
-	if grid.command == "map":
-		print("Received map update from "+ grid.source + "! Merging...")
-		merge_maps(grid)
-		send_updated_map(grid)
-	elif grid.command == "done":
-		if done == len(robots_list)-2 and not printed:
-			print("All frontiers have been explored! \nCalling all robots back...")
+	if new_grid.command == "map":
+		if new_grid.source != "robot0":
+			print("Received map update from "+ new_grid.source + "! Merging...")
+			merge_maps(new_grid)
+			send_updated_map(new_grid)
+	elif new_grid.command == "done":
+		if done == len(robots_list)-1 and not printed:
+			print("\nEXPLORATION IS OVER! \nCalling all robots back...")
 			printed = 1
 		else:
 			done = done+1  
@@ -100,7 +101,6 @@ def main():
 	pub = rospy.Publisher('/robot0/updated_map', OccupancyGrid, queue_size=10)
 	rospy.Subscriber("/robot0/map", OccupancyGrid, update_map)
 
-	starting_time = rospy.get_time()
 
 
 	rate = rospy.Rate(1)
@@ -110,22 +110,24 @@ def main():
 		if not grid == None:
 			rate.sleep()
 			break
+	
+	starting_time = rospy.get_time()
+
 
 	while (not rospy.is_shutdown()):
-		""" merged=list(merged_map)
+		merged=list(merged_map)
 		grid.data = merged
-		 """
 		pub.publish(grid)
 
 		time = rospy.get_time()
-		delta = time - starting_time
+		delta = float(time) - starting_time
 		map_np = np.array(merged_map, dtype= np.int8) 
 		known = (map_np != -1)
 		known_elements = np.count_nonzero(known)
 		
-		percentage = (float(known_elements)/len(map_np)) * 100
+		percentage = (float(known_elements)/(float(len(map_np))*0.475 )) * 100
 
-		if abs(delta % 60) <1:
+		if abs(delta % 20) <1:
 			print("Timestamp "+str(delta)+" seconds: '%Area covered = "+ str(percentage))
 
 		rate.sleep()

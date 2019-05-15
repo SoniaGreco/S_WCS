@@ -133,6 +133,18 @@ def share_data(robot_i):
 			msg.data = temp_var
 			send_message(msg,Data_Map,"map")
 			#print("Sent occupancy grid to robot"+ str(robot_i)+ "! ")
+
+			msg = Data_Sample()
+			msg.source = "robot1"
+			msg.destination = "robot"+str(robot_i)
+			
+			temp_var=sample_message()
+			temp_var.a = going_to_base
+			#temp_var.b = 
+			temp_var.c = "base"
+			msg.data = temp_var
+			send_message(msg,Data_Sample,"sample")
+
 			
 		i+=1
 
@@ -149,25 +161,9 @@ def check_connected_robots():
 	connection=connection_list[1+base]
 	if connection:
 		base_connected =1
-		base_map = merged_map
 	else: 
 		base_connected = 0
-		base_map_np = np.array(base_map, dtype = np.int8)
-		merged_map_np = np.array(merged_map, dtype = np.int8)
-		#number of known elements at the base
-		known_ind = (base_map_np != -1)
-		known_elements = np.count_nonzero(known_ind)
-
-		diff = merged_map_np-base_map_np
-		not_zero = (diff !=0)
-		#number of new elements
-		new_elements = np.count_nonzero(not_zero)
-
-		#
-		# IF ROBOT COLLECTED A LOT OF DATA WITHOUT SHARING IT, IT GOES BACK TO THE BASE STATION
-		#
-		if known_elements / (known_elements + new_elements) < 0.8:
-			going_to_base = 1
+		
 
 	for i in range (0, len(robots_list)):
 		if not i == 1:
@@ -187,8 +183,8 @@ def check_nearest_robot_to_base(other_bot_goal_x, other_bot_goal_y):
 	my_distance = math.sqrt( (goal_x-base_x)**2 +  (goal_y-base_y)**2)
 	other_distance = math.sqrt( (other_bot_goal_x-base_x)**2 +  (other_bot_goal_y-base_y)**2)
 		  
-	if my_distance < other_distance:
-		print("Need to go back to the BS!")
+	if my_distance <= other_distance:
+		#print("Not connected, closest bot to the BS. Need to go back to the BS!")
 		going_to_base = 1
 
 def callback_goal(mess):
@@ -210,16 +206,40 @@ def callback_goal(mess):
 		
 def callback_map(mess):
 	global goal_x
-	global goal_y, robot2_goal_x, robot2_goal_y
+	global goal_y, robot2_goal_x, robot2_goal_y, base_map
 	global merged_map, base_connected, going_to_base, robots_goals_list
 
 	if mess.command == "map":
 		#print("Received map from "+str(mess.source)+"! \nMerging maps...")
 		merge_maps(mess.data.data)
 		
+		if mess.source == "robot0":
+			base_map = mess.data.data
 
-	if not base_connected and not ord(mess.source[5])==0 and not robot2_goal_x==None:
-		check_nearest_robot_to_base(robot2_goal_x, robot2_goal_y)
+		if not base_connected and not ord(mess.source[5])==0 and not robot2_goal_x==None:
+			check_nearest_robot_to_base(robot2_goal_x, robot2_goal_y)
+
+
+		if not len(base_map)==0:
+
+			base_map_np = np.array(base_map, dtype = np.int8)
+			merged_map_np = np.array(merged_map, dtype = np.int8)
+			#number of known elements at the base
+			known_ind = (base_map_np != -1)
+			known_elements = np.count_nonzero(known_ind)
+			diff = np.array(merged_map_np, dtype = np.int8)
+			diff = merged_map_np-base_map_np
+			#number of new elements
+			new_elements = np.count_nonzero(diff)
+
+			#
+			# IF ROBOT COLLECTED A LOT OF DATA WITHOUT SHARING IT, IT GOES BACK TO THE BASE STATION
+			#
+			if float(known_elements) / float(known_elements + new_elements) < 0.7:
+				print("Too much data collected, need to go back to BS.")
+				going_to_base = 1
+
+
 
 def move_base_callback(r1,r2):
 	global robot_is_moving, going_to_base, stop
@@ -227,8 +247,6 @@ def move_base_callback(r1,r2):
 	robot_is_moving = 0
 	if final:
 		stop = 1
-	if going_to_base:
-		going_to_base = 0
 
 def movebase_client():
 
@@ -302,12 +320,9 @@ def odom_callback(odom_data):
 
 	if not starting_time == None:
 		time = rospy.get_time()
-		delta = float(time) - float(starting_time)
-		if abs(float(delta) % 20) <1:
+		delta = float(time) - starting_time
+		if abs(delta % 20) <1:
 			print("Timestamp "+str(delta)+" seconds: travelled distance = " + str(covered_distance))
-
-
-
 
 	
 def compute_frontier_distance(frontiers):
@@ -417,7 +432,6 @@ def main():
 	rospy.Subscriber("/robot1/odom", Odometry, odom_callback)
 	pub = rospy.Publisher('/robot1/updated_map', OccupancyGrid, queue_size=10)
 
-	starting_time = rospy.get_time()
 
 	rate = rospy.Rate(5)
 	while not rospy.is_shutdown():
@@ -426,6 +440,8 @@ def main():
 		if not original_x == None:
 			break
 	
+	starting_time = rospy.get_time()
+
 	initial_move()	
 
 	movebase_client()
@@ -441,14 +457,16 @@ def main():
 		rate.sleep()
 		pub.publish(grid)
 
-		if robot_is_moving:
-			#Checks if there are connected robots and sends them map and goal position
-			#otherwise continues towards the goal
-			check_connected_robots()
+		#Checks if there are connected robots and sends them map and goal position
+		#otherwise continues towards the goal
+		check_connected_robots()
 
+		if robot_is_moving:
 			if base_connected and going_to_base:
+				print("Base connected")
 				going_to_base = 0
-				explore()
+				robot_is_moving = 0
+				#explore()
 			
 		else:
 			if not stop:
@@ -463,6 +481,7 @@ def main():
 					print("Going back to base station!")
 					movebase_client()
 
+					
 
 				#If it doesnt need to go back to the base station, it searches for another frontier
 				else:

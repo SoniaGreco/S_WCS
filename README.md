@@ -5,7 +5,19 @@ Based on https://github.com/taherahmadi/WCS.git
 # ROLE-BASED STRATEGY IMPLEMENTED: 
 # How to test it:
 
-[EVERY COMMAND IN A NEW TERMINAL]
+RUN SHELLS WITH:
+
+./commands.sh
+
+AND
+
+./bots.sh
+
+
+
+
+
+[OR MANUALLY RUN EVERY COMMAND IN A NEW TERMINAL]
 
 roslaunch setup gserver.launch
 

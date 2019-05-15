@@ -128,7 +128,7 @@ def main():
 		percentage = (float(known_elements)/(float(len(map_np))*0.475 )) * 100
 
 		if abs(delta % 20) <1:
-			print("Timestamp "+str(delta)+" seconds: '%Area covered = "+ str(percentage))
+			print("Timestamp "+str(delta)+" seconds: % Area covered = "+ str(percentage))
 
 		rate.sleep()
 

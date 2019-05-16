@@ -18,6 +18,8 @@ sleep 5
 gnome-terminal -- roslaunch communication_node connection_visualizer.launch
 sleep 5
 gnome-terminal -- rviz
+sleep 5
+gnome-terminal -- roslaunch exploration burgard.launch
 
 
 

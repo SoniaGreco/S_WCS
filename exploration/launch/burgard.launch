@@ -3,47 +3,42 @@
 
 
 
-<arg name="num_robots" default="4"/>
+<arg name="num_robots" default="3"/>
 
 
 <!--  open Permission_granter.py and set the name of the robots in the list  -->
 
- <node pkg="burgard" type="Permission_granter.py" name="permission" output="screen" />
+ <node pkg="exploration" type="Permission_granter.py" name="permission" output="screen" />
 
 <!--  for each robot, you need to added one of these group tags with robot name   aslo don't forget to set num_robot on line 6  -->
-  <group ns="robot1">
-      <param name="namespace" value="robot1" />
-      <param name="number_of_robots" value="$(arg num_robots)" />
-  <node pkg="burgard" type="burgard_exploration.py" name="burgard1" output="screen" />
+  
+<!--
+<group ns="robot0">
+    <param name="namespace" value="robot0" />
+    <param name="number_of_robots" value="$(arg num_robots)" />
+    <node pkg="exploration" type="burgard_exploration.py" name="burgard1" output="screen" />
+</group>
+-->
 
-  </group>
+<group ns="robot1">
+    <param name="namespace" value="robot1" />
+    <param name="number_of_robots" value="$(arg num_robots)" />
+    <node pkg="exploration" type="burgard_exploration.py" name="burgard1" output="screen" />
+</group>
 
+<group ns="robot2">
+    <param name="namespace" value="robot2" />
+    <param name="number_of_robots" value="$(arg num_robots)" />
+    <node pkg="exploration" type="burgard_exploration.py" name="burgard1" output="screen" />
+</group>
 
-
-    <group ns="robot0">
-        <param name="namespace" value="robot0" />
-      <param name="number_of_robots" value="$(arg num_robots)" />
-    <node pkg="burgard" type="burgard_exploration.py" name="burgard1" output="screen" />
-
-    </group>
-
-
-
-      <group ns="robot2">
-          <param name="namespace" value="robot2" />
-      <param name="number_of_robots" value="$(arg num_robots)" />
-      <node pkg="burgard" type="burgard_exploration.py" name="burgard1" output="screen" />
-
-      </group>
-
+<!--
         <group ns="robot3">
             <param name="namespace" value="robot3" />
       <param name="number_of_robots" value="$(arg num_robots)" />
-        <node pkg="burgard" type="burgard_exploration.py" name="burgard1" output="screen" />
+        <node pkg="exploration" type="burgard_exploration.py" name="burgard1" output="screen" />
 
         </group>
-
-
-
+-->
 
 </launch>

@@ -30,8 +30,8 @@ original_x = None
 original_y = None
 
 #VALUES TO SET
-base_x = 0
-base_y = 0
+base_x = 7
+base_y = 4
 ##############
 
 

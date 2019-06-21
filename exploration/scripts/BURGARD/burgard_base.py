@@ -61,6 +61,7 @@ def main():
 	print("Base active")
 
 	starting_time = rospy.get_time()
+
 	print(starting_time)
 	
 	rate = rospy.Rate(10)
@@ -73,17 +74,16 @@ def main():
 	while not rospy.is_shutdown():
 		
 		pub.publish(grid)
-		print("A")
 		time = rospy.get_time()
 		delta = float(time) - starting_time
 		map_np = np.array(merged_map, dtype= np.int8) 
 		known = (map_np != -1)
 		known_elements = np.count_nonzero(known)
 		
-		percentage = (float(known_elements)/(float(len(map_np))*0.475 )) * 100
+		percentage = (float(known_elements)/(float(len(map_np))*0.328 )) * 100
 
-		if abs(delta % 20) <1:
-			print("Timestamp "+str(delta)+" seconds: % Area covered = "+ str(percentage))
+		#if abs(delta % 20) <2:
+		print("Timestamp "+str(delta)+" seconds: % Area covered = "+ str(percentage))
 
 
 		for j in range(0,len(robots_list)):

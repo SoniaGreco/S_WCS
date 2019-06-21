@@ -30,8 +30,8 @@ original_x = None
 original_y = None
 
 #VALUES TO SET
-base_x = 7
-base_y = 4
+base_x = 19
+base_y = 10
 ##############
 
 
@@ -235,7 +235,7 @@ def callback_map(mess):
 			#
 			# IF ROBOT COLLECTED A LOT OF DATA WITHOUT SHARING IT, IT GOES BACK TO THE BASE STATION
 			#
-			if float(known_elements) / float(known_elements + new_elements) < 0.7:
+			if float(known_elements) / float(known_elements + new_elements) < 0.7 and not base_connected:
 				print("Too much data collected, need to go back to BS.")
 				going_to_base = 1
 
@@ -460,6 +460,9 @@ def main():
 		#Checks if there are connected robots and sends them map and goal position
 		#otherwise continues towards the goal
 		check_connected_robots()
+
+		if not robot_is_moving and going_to_base and base_connected:
+			going_to_base = 0
 
 		if robot_is_moving:
 			if base_connected and going_to_base:

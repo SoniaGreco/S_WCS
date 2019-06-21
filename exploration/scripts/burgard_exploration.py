@@ -106,7 +106,7 @@ def get_frontiers(map_data):
 		while(robot_x==None or robot_y==None):
 			rospy.sleep(0.5);
 		print(name_space,"x",robot_x,"y",robot_y)
-		fsc=FrontierSearch(map_data,5,"balanced");
+		fsc=FrontierSearch(map_data,10,"balanced");
 		test_frontiers=fsc.searchFrom(Point(robot_x,robot_y,0.0));
 		frontiers=list(test_frontiers[0]);
 		test_id=0;
@@ -345,7 +345,10 @@ def burgard():
 		if (len(frontiers)==0):
 			print(name_space,"no new frontiers");
 			checking_goals_publisher.publish(Bool(False));
+			send_goal(19,10);
+			print(name_space,"Going back to base!");
 			exit();
+
 		#frontiers=compute_frontier_distance(frontiers);
 		print(name_space,"we have frontiers",len(frontiers));
 		if (len(frontiers)==0):

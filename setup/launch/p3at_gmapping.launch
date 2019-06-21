@@ -15,10 +15,10 @@
     <param name="maxRange" value="400" />
     <param name="linearUpdate" value="0.1" />
     <param name="angularUpdate" value="0.1" />
-    <param name="xmin" value="-10" />
-    <param name="ymin" value="-10"/>
-    <param name="xmax" value="10" />
-    <param name="ymax" value="10"/>
+    <param name="xmin" value="-30" />
+    <param name="ymin" value="-30"/>
+    <param name="xmax" value="30" />
+    <param name="ymax" value="30"/>
     <param name="sigma" value="0" />
     <param name="srr" value="0" />
     <param name="srt" value="0" />

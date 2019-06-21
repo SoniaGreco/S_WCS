@@ -12,14 +12,18 @@ sleep 5
 gnome-terminal -- roslaunch communication_node message_handler.launch
 sleep 5
 gnome-terminal -- roslaunch setup navigation.launch
-sleep 5
-gnome-terminal -- gzclient
-sleep 5
-gnome-terminal -- roslaunch communication_node connection_visualizer.launch
-sleep 5
-gnome-terminal -- rviz
 #sleep 5
+#gnome-terminal -- gzclient
+#sleep 5
+#gnome-terminal -- roslaunch communication_node connection_visualizer.launch
+#sleep 5
+gnome-terminal -- rviz
+sleep 5
 #gnome-terminal -- roslaunch exploration burgard.launch
 
 
+
+#gnome-terminal -- rosrun exploration burgard_bot1.py
+
+#gnome-terminal -- rosrun exploration burgard_bot2.py
 

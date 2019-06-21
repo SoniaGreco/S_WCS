@@ -5,22 +5,22 @@
 
 <include file="$(find setup)/launch/p3at_spawn.launch">
     <arg name="robotname" value="robot0"/>
-    <arg name="initialx" value="7"/>
-    <arg name="initialy" value="4"/>
+    <arg name="initialx" value="19"/>
+    <arg name="initialy" value="10"/>
   </include>
 
 
 <include file="$(find setup)/launch/p3at_spawn.launch">
     <arg name="robotname" value="robot1"/>
-    <arg name="initialx" value="5"/>
-    <arg name="initialy" value="4"/>
+    <arg name="initialx" value="15"/>
+    <arg name="initialy" value="10"/>
   </include>
 
 
 <include file="$(find setup)/launch/p3at_spawn.launch">
     <arg name="robotname" value="robot2"/>
-    <arg name="initialx" value="9"/>
-    <arg name="initialy" value="4"/>
+    <arg name="initialx" value="12"/>
+    <arg name="initialy" value="10"/>
   </include>
 
 

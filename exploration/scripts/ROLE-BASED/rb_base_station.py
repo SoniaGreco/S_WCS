@@ -125,7 +125,7 @@ def main():
 		known = (map_np != -1)
 		known_elements = np.count_nonzero(known)
 		
-		percentage = (float(known_elements)/(float(len(map_np))*0.328)) * 100
+		percentage = (float(known_elements)/(float(len(map_np))*0.37 )) * 100
 
 		if abs(delta % 20) <1:
 			print("Timestamp "+str(delta)+" seconds: % Area covered = "+ str(percentage))

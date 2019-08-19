@@ -30,8 +30,8 @@ original_x = None
 original_y = None
 
 #VALUES TO SET
-base_x = 19
-base_y = 10
+base_x = 28
+base_y = 20
 ##############
 
 
@@ -475,6 +475,9 @@ def main():
 		#Checks if there are connected robots and sends them map and goal position
 		#otherwise continues towards the goal
 		check_connected_robots()
+
+		if not robot_is_moving and going_to_base and base_connected:
+			going_to_base = 0
 				
 		if robot_is_moving:
 			if base_connected and going_to_base:
